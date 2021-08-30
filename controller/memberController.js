@@ -3,6 +3,7 @@ const m3u8ToMp4 = require('m3u8-to-mp4')
 const converter = new m3u8ToMp4()
 const axios = require('axios')
 const jsdom = require('jsdom')
+const download = require('download')
 const fs = require('fs')
 //===== config =====
 const index = 'https://sakurazaka46.com'
@@ -28,6 +29,15 @@ module.exports = {
     }
     return pageUrl
   },
+  getManagerAllPage: (start, end) => {
+    const urlAll = []
+    for (let i = start; i <= end; ++i) {
+      urlAll.push(
+        `https://sakurazaka46.com/s/s46/diary/managers_diary/list?page=${i}&cd=managers_diary`
+      )
+    }
+    return urlAll
+  },
   notDownloadRadio: async (pageUrl, existFile, pageHeaders) => {
     let notDownload = []
     await Promise.all(
@@ -46,6 +56,20 @@ module.exports = {
     )
     return notDownload
   },
+  notDownloadManager: (lists) => {
+    const unDownload = []
+    ;[...lists].map((list) => {
+      let date = list.querySelector('.date').textContent.replace(/[.]/g, '-')
+      let pics = list.querySelectorAll('.list-photo img')
+      pics = [...pics].map((item) => {
+        let src = index + item.src.replace('960_960_102400', '')
+        let temp = src.split('/')
+        let name = date + '_' + temp[temp.length - 2] + '.jpg'
+        unDownload.push({ name, src })
+      })
+    })
+    return unDownload
+  },
   downloadM3u8: (m3u8Url, path, title) => {
     return converter
       .setInputFile(m3u8Url)
@@ -53,18 +77,47 @@ module.exports = {
       .start()
       .catch((e) => console.log(e))
   },
-  getM3u8: (data) =>{
+  getM3u8: (data) => {
     return data.sources.find((item) => {
       return item.src && item.src.includes('m3u8')
     }).src
   },
   checkToken: (token) => {
-      console.log('=========================================================\n')
-      token === ''
-        ? console.log(
-            '----warning----請至setting.json輸入你的token----warning---- \n'
-          )
-        : console.log(`你的Token:${token}\n`)
-      console.log('===========================================================')
+    console.log('=========================================================\n')
+    token === ''
+      ? console.log(
+          '----warning----請至setting.json輸入你的token----warning---- \n'
+        )
+      : console.log(`你的Token:${token}\n`)
+    console.log('===========================================================')
+  },
+  getLoginHeader: (token) => {
+    return {
+      cookie: `B81AC560F83BFC8C=${token}`,
+      'user-agent':
+        'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Mobile Safari/537.36'
+    }
+  },
+  batchData: (pic, PART, path) => {
+    let offset = Math.ceil(pic.length / PART)
+    offset = Array(offset).fill(PART)
+    const picLength = pic.length - 1
+    let list = offset.map((item, i) => {
+      if (i === offset.length - 1) {
+        pic.slice(i * item, picLength)
+      }
+      return pic.slice(i * item, (i + 1) * item)
+    })
+    //分批下載
+    let series = list.map((arr, i) => {
+      return async () => {
+        await Promise.all(
+          arr.map(async (pic, j) => {
+            await download(pic, path, { filename: `${j + 1 + i * PART}.jpg` })
+          })
+        )
+      }
+    })
+    return series
   }
 }

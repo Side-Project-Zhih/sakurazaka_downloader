@@ -21,11 +21,7 @@ const data = []
   //確認是否有輸入token
   memberController.checkToken(token)
   //headers 設定
-  const pageHeaders = {
-    cookie: `B81AC560F83BFC8C=${token}`,
-    'user-agent':
-      ' Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Mobile Safari/537.36'
-  }
+  const pageHeaders = memberController.getLoginHeader(token)
   //設定是否只更新第一頁
   let start, end
   if (renewFistPage) {

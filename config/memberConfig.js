@@ -11,6 +11,13 @@ module.exports = {
       message: 'end:'
     }
   ],
+  historyQuestion: [
+    {
+      type: 'input',
+      name: 'url',
+      message: '網址'
+    }
+  ],
   videoHeaders: {
     Host: 'edge.api.brightcove.com',
     Connection: 'keep-alive',

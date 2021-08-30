@@ -56,19 +56,30 @@ module.exports = {
     )
     return notDownload
   },
-  notDownloadManager: (lists) => {
-    const unDownload = []
-    ;[...lists].map((list) => {
-      let date = list.querySelector('.date').textContent.replace(/[.]/g, '-')
-      let pics = list.querySelectorAll('.list-photo img')
-      pics = [...pics].map((item) => {
-        let src = index + item.src.replace('960_960_102400', '')
-        let temp = src.split('/')
-        let name = date + '_' + temp[temp.length - 2] + '.jpg'
-        unDownload.push({ name, src })
+  downloadManager: async (lists) => {
+    let alreadyDone = true
+    await Promise.all(
+      [...lists].map(async (list) => {
+        let date = list.querySelector('.date').textContent.replace(/[.]/g, '-')
+        let pics = list.querySelectorAll('.list-photo img')
+
+        await Promise.all(
+          [...pics].map((item) => {
+            let src = index + item.src.replace('960_960_102400', '')
+            let temp = src.split('/')
+            let name = date + '_' + temp[temp.length - 2] + '.jpg'
+            return fs.promises
+              .access(`./manager/${name}`)
+              .then()
+              .catch((error) => {
+                alreadyDone = false
+                download(src, './manager', { filename: `${name}` })
+              })
+          })
+        )
       })
-    })
-    return unDownload
+    )
+    return alreadyDone
   },
   downloadM3u8: (m3u8Url, path, title) => {
     return converter

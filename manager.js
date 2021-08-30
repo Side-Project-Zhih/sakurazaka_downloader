@@ -5,7 +5,7 @@ const inquirer = require('inquirer')
 const fs = require('fs')
 const memberController = require('./controller/memberController')
 const { pageQuestions } = require('./config/memberConfig')
-const { mergePromise } = require('./helper/helper')
+const { mergePromise, createInitialFolder } = require('./helper/helper')
 ;(async () => {
   let start
   let end
@@ -17,7 +17,7 @@ const { mergePromise } = require('./helper/helper')
   //確認是否有輸入token
   memberController.checkToken(token)
   //建立初始資料夾
-  memberController.createInitialFolder('./manager')
+  await createInitialFolder('./manager')
   //判斷是否使用更新最新
   if (renewFistPage) {
     start = 1
@@ -42,20 +42,11 @@ const { mergePromise } = require('./helper/helper')
       const dom = new jsdom.JSDOM(res.data)
       const document = dom.window.document
       let lists = document.querySelectorAll('.list')
-      let unDownload = memberController.notDownloadManager(lists)
-      unDownload = unDownload.filter((item) => {
-        let { src, name } = item
-        return !fileNames.includes(name)
-      })
-      if (!unDownload.length) {
+      const alreadyDone = await memberController.downloadManager(lists)
+      if (alreadyDone) {
         console.log('已更新到最新')
       } else {
         console.log(`正在下載 ....${i} `)
-        await Promise.all(
-          unDownload.map(async (item) => {
-            await download(item.src, path, { filename: `${item.name}` })
-          })
-        )
       }
     }
   })

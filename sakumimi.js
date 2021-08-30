@@ -10,6 +10,7 @@ const {
   pageQuestions,
   videoHeaders
 } = require('./config/memberConfig')
+const {createInitialFolder} = require('./helper/helper')
 const memberController = require('./controller/memberController')
 const data = []
 ;(async function () {
@@ -35,7 +36,7 @@ const data = []
   --start
   --end
   //初始建立資料夾
-  await memberController.createInitialFolder('./sakumimi')
+  await createInitialFolder('./sakumimi')
   let filenames = await fs.promises.readdir('./sakumimi')
   //確定資料夾內檔案名稱
   let existFile = memberController.checkFolderFileNames(filenames)

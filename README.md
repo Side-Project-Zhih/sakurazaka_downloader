@@ -18,6 +18,8 @@
 
 ### 下載 exe檔
 
+[blog](https://github.com/Side-Project-Zhih/sakurazaka_downloader/raw/master/exe/blog.exe) / [manager](https://github.com/Side-Project-Zhih/sakurazaka_downloader/raw/master/exe/manager.exe) / [sakumimi](https://github.com/Side-Project-Zhih/sakurazaka_downloader/raw/master/exe/sakumimi.exe) / [history](https://github.com/Side-Project-Zhih/sakurazaka_downloader/raw/master/exe/history.exe)
+
 ### 下載專案
 git clone https://github.com/Side-Project-Zhih/sakurazaka_downloader.git
 or

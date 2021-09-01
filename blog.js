@@ -15,7 +15,7 @@ const profile = blogController.showMemberInfo(memberList)
   await createInitialFolder('./sakuBlog')
   let page
   let endPage
-  let setting = await fs.promises.readFile('./config/setting.json')
+  let setting = await fs.promises.readFile('./setting.json')
   setting = JSON.parse(setting.toString())
   const { renewFistPage, openMany } = setting
   let members = []

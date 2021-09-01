@@ -8,7 +8,7 @@ const { historyQuestion } = require('./config/memberConfig')
 const { mergePromise } = require('./helper/helper')
 ;(async () => {
   //讀取token
-  let setting = await fs.promises.readFile('./config/setting.json')
+  let setting = await fs.promises.readFile('./setting.json')
   setting = JSON.parse(setting.toString())
   const { token } = setting
   //確認是否有輸入token

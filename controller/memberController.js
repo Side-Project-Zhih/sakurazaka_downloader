@@ -6,14 +6,15 @@ const jsdom = require('jsdom')
 const download = require('download')
 const fs = require('fs')
 const inquirer = require("inquirer")
+//====chrome======
 const { Builder, By, until } = require('selenium-webdriver')
-const webdriver = require('selenium-webdriver')
 let Keys = require('selenium-webdriver/lib/input').Key
 const chrome = require('selenium-webdriver/chrome')
 const options = new chrome.Options()
 options.setUserPreferences({
-  'profile.default_content_setting_values.notifications': 1
+  'profile.default_content_setting_values.notifications': 1,
 })
+options.excludeSwitches('enable-logging')
 options.windowSize({ height: 800, width: 600 })
 //===== config =====
 const index = 'https://sakurazaka46.com'
@@ -152,7 +153,7 @@ module.exports = {
     const document = dom.window.document
     let button = document.querySelector('button')
     if (button && button.textContent === 'ログイン') {
-      const cookie = await this.getToken({ email, password })
+      const cookie = await this.getToken(setting)
       token = cookie.value
       if (!token) {
         throw new Error('沒拿到token!!')
@@ -228,7 +229,8 @@ module.exports = {
     })
     return unDownload
   },
-  getToken: async function ({ email, password }) {
+  getToken: async function (setting) {
+    let {password, email} = setting
     const driver = new Builder()
       .withCapabilities(options)
       .forBrowser('chrome')
@@ -254,9 +256,18 @@ module.exports = {
       if (isLogin === 'ログイン成功') {
         console.log(isLogin)
         let token = await driver.manage().getCookie('B81AC560F83BFC8C')
+        await driver.close()
         return token
       } else {
-        throw new Error('幹你打錯帳號密碼啦!!!!!請去setting.json更改')
+        await driver.close()
+        console.log("=================================")
+        console.error('幹你打錯帳號密碼啦!!!!!再打一次')
+        console.log('=================================')
+        let res = await inquirer.prompt(memberConfig.askAccount)
+        setting.email = res.email
+        setting.password = res.password
+        await fs.promises.writeFile('./setting.json', JSON.stringify(setting))
+        return await this.getToken(setting)
       }
     } else {
       throw new Error('登入頁按鈕消失')

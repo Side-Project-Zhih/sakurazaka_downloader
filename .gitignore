@@ -4,3 +4,8 @@ sakumimi
 test
 backs live
 sakaBlog
+*.exe
+setting.json
+manager
+.env
+managerRecord.json

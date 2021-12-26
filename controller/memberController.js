@@ -5,6 +5,15 @@ const axios = require('axios')
 const jsdom = require('jsdom')
 const download = require('download')
 const fs = require('fs')
+const { Builder, By, until } = require('selenium-webdriver')
+const webdriver = require('selenium-webdriver')
+let Keys = require('selenium-webdriver/lib/input').Key
+const chrome = require('selenium-webdriver/chrome')
+const options = new chrome.Options()
+options.setUserPreferences({
+  'profile.default_content_setting_values.notifications': 1
+})
+options.windowSize({ height: 800, width: 600 })
 //===== config =====
 const index = 'https://sakurazaka46.com'
 
@@ -102,7 +111,7 @@ module.exports = {
       : console.log(`你的Token:${token}\n`)
     console.log('===========================================================')
   },
-  getLoginHeader: (token) => {
+  getLoginHeader: function (token) {
     return {
       cookie: `B81AC560F83BFC8C=${token}`,
       'user-agent':
@@ -130,5 +139,103 @@ module.exports = {
       }
     })
     return series
+  },
+  testAndRenewToken: async function (token, email, password, setting) {
+    let res = await axios.get(
+      'https://sakurazaka46.com/s/s46/diary/managers_diary/list',
+      {
+        headers: this.getLoginHeader(token)
+      }
+    )
+    const dom = new jsdom.JSDOM(res.data)
+    const document = dom.window.document
+    let button = document.querySelector('button')
+    if (button && button.textContent === 'ログイン') {
+      const cookie = await this.getToken({ email, password })
+      token = cookie.value
+      if (!token) {
+        throw new Error('沒拿到token!!')
+      }
+      setting.token = token
+      try {
+        await fs.promises.writeFile('setting.json', JSON.stringify(setting))
+      } catch (err) {
+        throw new Error('更新setting錯誤')
+      }
+    }
+  },
+  readOrCreateRecord: async function (filename, oldFileDir) {
+    let fileNames = {}
+    try {
+      fileNames = await fs.promises.readFile(`./${filename}`)
+      fileNames = JSON.parse(fileNames.toString())
+    } catch (err) {
+      let files = await fs.promises.readdir(oldFileDir)
+      for (let file of files) {
+        fileNames[file] = new Date().toLocaleDateString()
+      }
+      await fs.promises.writeFile(filename, JSON.stringify(fileNames))
+    }
+    return fileNames
+  },
+  outputUndownloadAtManager: async function (url, token, fileNames) {
+    let pageHeader = {
+      headers: this.getLoginHeader(token)
+    }
+    let unDownload = []
+    const res = await axios(url, pageHeader)
+
+    const dom = new jsdom.JSDOM(res.data)
+    const document = dom.window.document
+    const index = 'https://sakurazaka46.com'
+    let lists = document.querySelectorAll('.list')
+
+    lists = [...lists].map((list) => {
+      let date = list.querySelector('.date').textContent.replace(/[.]/g, '-')
+      let pics = list.querySelectorAll('.list-photo img')
+      pics = [...pics].map((item) => {
+        let src = index + item.src.replace('960_960_102400', '')
+        let temp = src.split('/')
+        let name = date + '_' + temp[temp.length - 2] + '.jpg'
+        if (!fileNames[name]) {
+          unDownload.push({ name, src })
+        }
+      })
+    })
+    return unDownload
+  },
+  getToken: async function ({ email, password }) {
+    const driver = new Builder()
+      .withCapabilities(options)
+      .forBrowser('chrome')
+      .build()
+    const web = 'https://sakurazaka46.com/s/s46/login?ima=4949' //填寫你想要前往的網站
+    await driver.get(web)
+    const email_ele = await driver.findElement(
+      By.css('#form > div:nth-child(1) > div > input[type=email]')
+    )
+    const email_pwd = await driver.findElement(
+      By.css(
+        '#form > div.form_list.form_list_password > div > input[type=password]'
+      )
+    )
+    email_ele.sendKeys(email)
+    email_pwd.sendKeys(password)
+
+    const nextButton = await driver.findElement(By.id('SaveAccount'))
+    if (nextButton.isDisplayed()) {
+      await nextButton.sendKeys(Keys.ENTER).catch((err) => console.log(err))
+      let title = await driver.findElement(By.className('page_titie'))
+      let isLogin = await title.getText()
+      if (isLogin === 'ログイン成功') {
+        console.log(isLogin)
+        let token = await driver.manage().getCookie('B81AC560F83BFC8C')
+        return token
+      } else {
+        throw new Error('幹你打錯帳號密碼啦!!!!!')
+      }
+    } else {
+      throw new Error('登入頁按鈕消失')
+    }
   }
 }

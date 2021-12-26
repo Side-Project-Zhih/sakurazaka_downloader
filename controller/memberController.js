@@ -164,7 +164,7 @@ module.exports = {
       }
     }
   },
-  readOrCreateRecord: async function (filename, oldFileDir) {
+  readOrCreateRecordForManager: async function (filename, oldFileDir) {
     let fileNames = {}
     try {
       fileNames = await fs.promises.readFile(`./${filename}`)
@@ -177,6 +177,21 @@ module.exports = {
       await fs.promises.writeFile(filename, JSON.stringify(fileNames))
     }
     return fileNames
+  },
+  readOrCreateRecordForHistory: async function (filename, year) {
+    let record = {}
+    try {
+      record = await fs.promises.readFile(`./${filename}`)
+      record = JSON.parse(record.toString())
+      if (!record[year]) {
+        record[year] = {}
+      }
+    } catch (err) {
+      if (!record[year]) {
+        record[year] = {}
+      }
+    }
+    return record
   },
   outputUndownloadAtManager: async function (url, token, fileNames) {
     let pageHeader = {

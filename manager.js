@@ -35,7 +35,7 @@ const { mergePromise, createInitialFolder } = require('./helper/helper')
   --start
   --end
   const path = './manager'
-  let fileNames = await memberController.readOrCreateRecord(
+  let fileNames = await memberController.readOrCreateRecordForManager(
     'managerRecord.json',
     path
   )

@@ -14,9 +14,9 @@ module.exports = {
   historyQuestion: [
     {
       type: 'input',
-      name: 'url',
-      message: '網址'
-    }
+      name: 'year',
+      message: '年份'
+    },
   ],
   videoHeaders: {
     Host: 'edge.api.brightcove.com',

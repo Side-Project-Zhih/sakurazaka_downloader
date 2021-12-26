@@ -5,20 +5,20 @@ const axios = require('axios')
 const jsdom = require('jsdom')
 const download = require('download')
 const fs = require('fs')
-const inquirer = require("inquirer")
+const inquirer = require('inquirer')
 //====chrome======
 const { Builder, By, until } = require('selenium-webdriver')
 let Keys = require('selenium-webdriver/lib/input').Key
 const chrome = require('selenium-webdriver/chrome')
 const options = new chrome.Options()
 options.setUserPreferences({
-  'profile.default_content_setting_values.notifications': 1,
+  'profile.default_content_setting_values.notifications': 1
 })
 options.excludeSwitches('enable-logging')
 options.windowSize({ height: 800, width: 600 })
 //===== config =====
 const index = 'https://sakurazaka46.com'
-const memberConfig = require("../config/memberConfig")
+const memberConfig = require('../config/memberConfig')
 //===================
 
 module.exports = {
@@ -40,6 +40,7 @@ module.exports = {
     }
     return pageUrl
   },
+
   getManagerAllPage: (start, end) => {
     const urlAll = []
     for (let i = start; i <= end; ++i) {
@@ -49,18 +50,46 @@ module.exports = {
     }
     return urlAll
   },
-  notDownloadRadio: async (pageUrl, existFile, pageHeaders) => {
+  getM3u8: function (data) {
+    return data.sources.find((item) => {
+      return item.src && item.src.includes('m3u8')
+    }).src
+  },
+  notDownloadRadio: async function(pageUrl, record, pageHeaders)  {
     let notDownload = []
     await Promise.all(
       pageUrl.map(async (url) => {
         const res = await axios.get(url, { headers: pageHeaders })
         const dom = new jsdom.JSDOM(res.data)
         const document = dom.window.document
-        ;[...document.querySelectorAll('.box-txt')].map((item) => {
+        ;[...document.querySelectorAll('.box-txt')].map(async (item) => {
           let num = +item.querySelector('.ttl').textContent.split('#')[1]
-          if (!existFile.includes(num)) {
+          if (!record[`Sakumimi_vol_${num}`]) {
             let link = item.querySelector('a').href
-            notDownload.push(index + link)
+            let obj = {}
+            obj[`Sakumimi_vol_${num}`] = index + link
+            notDownload.push(obj)
+          } else if (record[`Sakumimi_vol_${num}`]) {
+            let { title, url, cover, content } = record[`Sakumimi_vol_${num}`]
+            title = `Sakumimi_vol_${num}-${title}`
+            const path = `./sakumimi/${title}`
+            try {
+              await fs.promises.access(path)
+            } catch (err) {
+              await mkdirp(path)
+              const videoRes = await axios.get(url, {
+                headers: memberConfig.videoHeaders
+              })
+              let m3u8Url = this.getM3u8(videoRes.data)
+              console.log(title + '-folder OK')
+              await fs.promises.writeFile(`${path}/${title}.txt`, content)
+              await download(cover, path, {
+                filename: `${title}.jpg`
+              })
+              console.log(title + '-cover OK')
+              await this.downloadM3u8(m3u8Url, path, title)
+              console.log(title + 'File converted')
+            }
           }
         })
       })
@@ -92,17 +121,12 @@ module.exports = {
     )
     return alreadyDone
   },
-  downloadM3u8: (m3u8Url, path, title) => {
+  downloadM3u8: function (m3u8Url, path, title) {
     return converter
       .setInputFile(m3u8Url)
       .setOutputFile(`${path}/${title}.mp4`)
       .start()
       .catch((e) => console.log(e))
-  },
-  getM3u8: (data) => {
-    return data.sources.find((item) => {
-      return item.src && item.src.includes('m3u8')
-    }).src
   },
   checkToken: (token) => {
     console.log('=========================================================\n')
@@ -195,6 +219,21 @@ module.exports = {
     }
     return record
   },
+  readOrCreateRecordForMimi: async function (filename, oldFileDir) {
+    let fileNames = {}
+    try {
+      fileNames = await fs.promises.readFile(`./${filename}`)
+      fileNames = JSON.parse(fileNames.toString())
+    } catch (err) {
+      let files = await fs.promises.readdir(oldFileDir)
+      for (let file of files) {
+        let name = file.split('-')[0]
+        fileNames[name] = new Date().toLocaleDateString()
+      }
+      await fs.promises.writeFile(filename, JSON.stringify(fileNames))
+    }
+    return fileNames
+  },
   outputUndownloadAtManager: async function (url, token, fileNames) {
     let pageHeader = {
       headers: this.getLoginHeader(token)
@@ -210,18 +249,18 @@ module.exports = {
     lists = [...lists].map((list) => {
       let date = list.querySelector('.date').textContent.replace(/[.]/g, '-')
       let pics = list.querySelectorAll('.list-photo img')
-      pics = [...pics].map(async(item) => {
+      pics = [...pics].map(async (item) => {
         let src = index + item.src.replace('960_960_102400', '')
         let temp = src.split('/')
         let name = date + '_' + temp[temp.length - 2] + '.jpg'
         if (!fileNames[name]) {
           unDownload.push({ name, src })
-        }else if (fileNames[name]) {
+        } else if (fileNames[name]) {
           try {
             await fs.promises.access(`./manager/${name}.jpg`)
           } catch (err) {
             if (err) {
-               await download(src, './manager', { filename: `${name}` })
+              await download(src, './manager', { filename: `${name}` })
             }
           }
         }
@@ -230,7 +269,7 @@ module.exports = {
     return unDownload
   },
   getToken: async function (setting) {
-    let {password, email} = setting
+    let { password, email } = setting
     const driver = new Builder()
       .withCapabilities(options)
       .forBrowser('chrome')
@@ -260,7 +299,7 @@ module.exports = {
         return token
       } else {
         await driver.close()
-        console.log("=================================")
+        console.log('=================================')
         console.error('幹你打錯帳號密碼啦!!!!!再打一次')
         console.log('=================================')
         let res = await inquirer.prompt(memberConfig.askAccount)
@@ -273,14 +312,14 @@ module.exports = {
       throw new Error('登入頁按鈕消失')
     }
   },
-  checkAccount: async function( setting){
-    let {password, email} = setting
-      if (!password || !email) {
-        let res = await inquirer.prompt(memberConfig.askAccount)
-        setting.email = res.email
-        setting.password = res.password
-        await fs.promises.writeFile('./setting.json', JSON.stringify(setting))
-      }
-      return setting
+  checkAccount: async function (setting) {
+    let { password, email } = setting
+    if (!password || !email) {
+      let res = await inquirer.prompt(memberConfig.askAccount)
+      setting.email = res.email
+      setting.password = res.password
+      await fs.promises.writeFile('./setting.json', JSON.stringify(setting))
+    }
+    return setting
   }
 }

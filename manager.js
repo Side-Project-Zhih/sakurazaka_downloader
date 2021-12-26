@@ -6,18 +6,15 @@ const fs = require('fs')
 const memberController = require('./controller/memberController')
 const { pageQuestions } = require('./config/memberConfig')
 const { mergePromise, createInitialFolder } = require('./helper/helper')
+const memberConfig = require('./config/memberConfig')
 ;(async () => {
   let start
   let end
   // 讀取token
   let setting = await fs.promises.readFile('./setting.json')
   setting = JSON.parse(setting.toString())
-  let { password, email, token, renewFistPage } = setting
-  if (!password || !email) {
-    const info = require('dotenv').config().parsed
-    password = info.password
-    email = info.email
-  }
+  let { password, email, token, renewFistPage } =
+    await memberController.checkAccount(setting)
 
   //判斷是否使用更新最新
   if (renewFistPage) {

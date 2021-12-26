@@ -5,6 +5,7 @@ const axios = require('axios')
 const jsdom = require('jsdom')
 const download = require('download')
 const fs = require('fs')
+const inquirer = require("inquirer")
 const { Builder, By, until } = require('selenium-webdriver')
 const webdriver = require('selenium-webdriver')
 let Keys = require('selenium-webdriver/lib/input').Key
@@ -16,7 +17,7 @@ options.setUserPreferences({
 options.windowSize({ height: 800, width: 600 })
 //===== config =====
 const index = 'https://sakurazaka46.com'
-
+const memberConfig = require("../config/memberConfig")
 //===================
 
 module.exports = {
@@ -208,12 +209,20 @@ module.exports = {
     lists = [...lists].map((list) => {
       let date = list.querySelector('.date').textContent.replace(/[.]/g, '-')
       let pics = list.querySelectorAll('.list-photo img')
-      pics = [...pics].map((item) => {
+      pics = [...pics].map(async(item) => {
         let src = index + item.src.replace('960_960_102400', '')
         let temp = src.split('/')
         let name = date + '_' + temp[temp.length - 2] + '.jpg'
         if (!fileNames[name]) {
           unDownload.push({ name, src })
+        }else if (fileNames[name]) {
+          try {
+            await fs.promises.access(`./manager/${name}.jpg`)
+          } catch (err) {
+            if (err) {
+               await download(src, './manager', { filename: `${name}` })
+            }
+          }
         }
       })
     })
@@ -247,10 +256,20 @@ module.exports = {
         let token = await driver.manage().getCookie('B81AC560F83BFC8C')
         return token
       } else {
-        throw new Error('幹你打錯帳號密碼啦!!!!!')
+        throw new Error('幹你打錯帳號密碼啦!!!!!請去setting.json更改')
       }
     } else {
       throw new Error('登入頁按鈕消失')
     }
+  },
+  checkAccount: async function( setting){
+    let {password, email} = setting
+      if (!password || !email) {
+        let res = await inquirer.prompt(memberConfig.askAccount)
+        setting.email = res.email
+        setting.password = res.password
+        await fs.promises.writeFile('./setting.json', JSON.stringify(setting))
+      }
+      return setting
   }
 }

@@ -11,12 +11,8 @@ const { createInitialFolder } = require('./controller/memberController')
   //讀取token
   let setting = await fs.promises.readFile('./setting.json')
   setting = JSON.parse(setting.toString())
-  let { password, email, token, renewFistPage } = setting
-  if (!password || !email) {
-    const info = require('dotenv').config().parsed
-    password = info.password
-    email = info.email
-  }
+  let { password, email, token  } =
+    await memberController.checkAccount(setting)
   //input 年分
   const res = await inquirer.prompt(historyQuestion)
   const PART = 30

@@ -18,6 +18,18 @@ module.exports = {
       message: '年份'
     },
   ],
+  askAccount:[
+    {
+      type: 'input',
+      name:'email',
+      message:"輸入帳號"
+    },
+    {
+      type: 'input',
+      name:'password',
+      message:"輸入密碼"
+    }
+  ],
   videoHeaders: {
     Host: 'edge.api.brightcove.com',
     Connection: 'keep-alive',

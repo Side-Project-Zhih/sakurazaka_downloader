@@ -1,19 +1,16 @@
-const axios = require('axios')
-const jsdom = require('jsdom')
 const download = require('download')
 const inquirer = require('inquirer')
 const fs = require('fs')
 const memberController = require('./controller/memberController')
 const { pageQuestions } = require('./config/memberConfig')
 const { mergePromise, createInitialFolder } = require('./helper/helper')
-const memberConfig = require('./config/memberConfig')
 ;(async () => {
   let start
   let end
   // 讀取token
   let setting = await fs.promises.readFile('./setting.json')
   setting = JSON.parse(setting.toString())
-  let { password, email, token, renewFistPage } =
+  let {token, renewFistPage } =
     await memberController.checkAccount(setting)
 
   //判斷是否使用更新最新
@@ -26,7 +23,9 @@ const memberConfig = require('./config/memberConfig')
     end = res.end
   }
   //確認是否有輸入token
-  await memberController.testAndRenewToken(token, email, password, setting)
+  token = await memberController.testAndRenewToken(token, setting)
+  // console.log (token)
+  // return 
   //建立初始資料夾
   await createInitialFolder('./manager')
   --start

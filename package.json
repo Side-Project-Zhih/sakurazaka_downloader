@@ -1,8 +1,9 @@
 {
-  "name": "m3u8",
+  "name": "history",
   "version": "1.0.0",
   "description": "",
-  "main": "test.js",
+  "main": "history.js",
+  "bin": "history.js",
   "scripts": {
     "blog": "node blog.js",
     "manager": "node manager.js",
@@ -11,11 +12,22 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "pack": "pkg -t node10 blog.js && pkg -t node10 sakumimi.js && pkg -t node10 manager.js && pkg -t node10 history.js"
   },
+  "pkg": {
+    "scripts": [
+      "controller/*.js",
+      "config/*.js",
+      "helper/*.js",
+      "!**/node_modules"
+    ],
+    "assets": [
+      "**/node_modules/**/*"
+    ]
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.4",
     "dotenv": "^10.0.0",
     "download": "^8.0.0",
     "ffmpeg": "0.0.4",
@@ -23,6 +35,7 @@
     "jsdom": "^16.6.0",
     "m3u8-to-mp4": "^1.0.0",
     "mkdirp": "^1.0.4",
+    "request": "^2.88.2",
     "selenium-webdriver": "^4.1.0"
   }
 }

@@ -6,9 +6,11 @@ const jsdom = require('jsdom')
 const download = require('download')
 const fs = require('fs')
 const inquirer = require('inquirer')
+const request = require('request')
 //====chrome======
-const { Builder, By, until } = require('selenium-webdriver')
-let Keys = require('selenium-webdriver/lib/input').Key
+const { Builder, By } = require('selenium-webdriver')
+let webdriver = require('selenium-webdriver')
+// let Keys = require('selenium-webdriver/lib/input').Key
 const chrome = require('selenium-webdriver/chrome')
 const options = new chrome.Options()
 options.setUserPreferences({
@@ -55,7 +57,7 @@ module.exports = {
       return item.src && item.src.includes('m3u8')
     }).src
   },
-  notDownloadRadio: async function(pageUrl, record, pageHeaders)  {
+  notDownloadRadio: async function (pageUrl, record, pageHeaders) {
     let notDownload = []
     await Promise.all(
       pageUrl.map(async (url) => {
@@ -166,7 +168,7 @@ module.exports = {
     })
     return series
   },
-  testAndRenewToken: async function (token, email, password, setting) {
+  testAndRenewToken: async function (token, setting) {
     let res = await axios.get(
       'https://sakurazaka46.com/s/s46/diary/managers_diary/list',
       {
@@ -177,8 +179,8 @@ module.exports = {
     const document = dom.window.document
     let button = document.querySelector('button')
     if (button && button.textContent === 'ログイン') {
-      const cookie = await this.getToken(setting)
-      token = cookie.value
+
+     token = await this.getTokenByReq(setting)
       if (!token) {
         throw new Error('沒拿到token!!')
       }
@@ -189,6 +191,7 @@ module.exports = {
         throw new Error('更新setting錯誤')
       }
     }
+    return token
   },
   readOrCreateRecordForManager: async function (filename, oldFileDir) {
     let fileNames = {}
@@ -269,6 +272,8 @@ module.exports = {
     return unDownload
   },
   getToken: async function (setting) {
+    // let Builder = webdriver.Builder, By = webdriver.By
+
     let { password, email } = setting
     const driver = new Builder()
       .withCapabilities(options)
@@ -289,7 +294,9 @@ module.exports = {
 
     const nextButton = await driver.findElement(By.id('SaveAccount'))
     if (nextButton.isDisplayed()) {
-      await nextButton.sendKeys(Keys.ENTER).catch((err) => console.log(err))
+      await nextButton
+        .sendKeys(webdriver.Key.ENTER)
+        .catch((err) => console.log(err))
       let title = await driver.findElement(By.className('page_titie'))
       let isLogin = await title.getText()
       if (isLogin === 'ログイン成功') {
@@ -321,5 +328,50 @@ module.exports = {
       await fs.promises.writeFile('./setting.json', JSON.stringify(setting))
     }
     return setting
+  },
+  getTokenByReq: async function (setting) {
+    function requestPromise(options) {
+      return new Promise((res,rej) => {
+        request(options, function (err, response) {
+          if (err) return rej(err)
+          res(response)
+        })
+      })
+    }
+    let { password, email } = setting
+    let options = {
+      method: 'POST',
+      url: 'https://sakurazaka46.com/s/s46/login',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      form: {
+        mode: 'LOGIN',
+        idpwLgid: email,
+        idpwLgpw: password
+      }
+    }
+    let res = await requestPromise(options)
+    let setCookie = res.headers['set-cookie']
+    let count = 0
+    let token
+    for (let cookie of setCookie) {
+      if (cookie.includes('B81AC560F83BFC8C')){
+         token = cookie.split(";")[0].split("=")[1]
+         ++count
+      }
+    }
+    if (count === 2) {
+      return token 
+    } else {
+      console.log('=================================')
+      console.error('幹你打錯帳號密碼啦!!!!!再打一次!啾咪 <3')
+      console.log('=================================')
+      let res = await inquirer.prompt(memberConfig.askAccount)
+      setting.email = res.email
+      setting.password = res.password
+      await fs.promises.writeFile('./setting.json', JSON.stringify(setting))
+      return await this.getTokenByReq(setting)
+    }
   }
 }

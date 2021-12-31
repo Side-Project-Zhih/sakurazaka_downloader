@@ -19,8 +19,7 @@ const { createInitialFolder } = require('./controller/memberController')
   const index = 'https://sakurazaka46.com'
   const year = res.year
   //確認是否有輸入token
-  await memberController.testAndRenewToken(token, email, password, setting)
-
+  token = await memberController.testAndRenewToken(token, setting)
   // 抓取年份網頁
   const path = `./history/${year}`
   await createInitialFolder(path)

@@ -99,26 +99,6 @@ const memberController = require('./controller/memberController')
         }
       })
     )
-    //整理並下載
-    // await Promise.all(
-    //   data.map(async (radio) => {
-    //     let { title, videoId, cover, content } = radio
-    //     const videoUrl = api + videoId
-    //     const res = await axios.get(videoUrl, { headers: videoHeaders })
-    //     let m3u8Url = memberController.getM3u8(res.data)
-    //     title = `${res.data.name}-${title}`
-    //     const path = `./sakumimi/${title}`
-    //     //建立個別資料夾=> 下載簡介 => 下載圖片 => 下載音檔
-    //     await mkdirp(path)
-    //     console.log(title + '-folder OK')
-    //     await fs.promises.writeFile(`${path}/${title}.txt`, content)
-    //     await download(cover, path, { filename: `${title}.jpg` })
-    //     console.log(title + '-cover OK')
-    //     await memberController.downloadM3u8(m3u8Url, path, title)
-    //     console.log(title + 'File converted')
-    //   })
-    // )
-    // return console.log('finished')
   }
   await fs.promises.writeFile('./mimiRecord.json', JSON.stringify(record))
   console.log('finished')

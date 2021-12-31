@@ -7,17 +7,6 @@ const download = require('download')
 const fs = require('fs')
 const inquirer = require('inquirer')
 const request = require('request')
-//====chrome======
-const { Builder, By } = require('selenium-webdriver')
-let webdriver = require('selenium-webdriver')
-// let Keys = require('selenium-webdriver/lib/input').Key
-const chrome = require('selenium-webdriver/chrome')
-const options = new chrome.Options()
-options.setUserPreferences({
-  'profile.default_content_setting_values.notifications': 1
-})
-options.excludeSwitches('enable-logging')
-options.windowSize({ height: 800, width: 600 })
 //===== config =====
 const index = 'https://sakurazaka46.com'
 const memberConfig = require('../config/memberConfig')
@@ -272,8 +261,18 @@ module.exports = {
     return unDownload
   },
   getToken: async function (setting) {
-    // let Builder = webdriver.Builder, By = webdriver.By
-
+    //selenium
+    //====chrome======
+    const { Builder, By } = require('selenium-webdriver')
+    let webdriver = require('selenium-webdriver')
+    // let Keys = require('selenium-webdriver/lib/input').Key
+    const chrome = require('selenium-webdriver/chrome')
+    const options = new chrome.Options()
+    options.setUserPreferences({
+      'profile.default_content_setting_values.notifications': 1
+    })
+    options.excludeSwitches('enable-logging')
+    options.windowSize({ height: 800, width: 600 })
     let { password, email } = setting
     const driver = new Builder()
       .withCapabilities(options)

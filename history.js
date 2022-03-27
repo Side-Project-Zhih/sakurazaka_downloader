@@ -17,8 +17,8 @@ const { createInitialFolder } = require("./controller/memberController");
   const PART = 30;
   const index = "https://sakurazaka46.com";
   const year = res.year;
-  //確認是否有輸入token
-  token = await memberController.testAndRenewToken(token, setting);
+  
+  token = await memberController.getTokenByReq(setting);
   // 抓取年份網頁
   const path = `./history/${year}`;
   await createInitialFolder(path);

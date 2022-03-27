@@ -31,7 +31,7 @@ const memberController = require("./controller/memberController");
   --start;
   --end;
   //確認是否有輸入token
-  token = await memberController.testAndRenewToken(token, setting);
+  token = await memberController.getTokenByReq(setting);
   //初始建立資料夾
   await createInitialFolder("./sakumimi");
 

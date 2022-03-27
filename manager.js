@@ -21,8 +21,8 @@ const { mergePromise, createInitialFolder } = require("./helper/helper");
     start = res.start;
     end = res.end;
   }
-  //確認是否有輸入token
-  token = await memberController.testAndRenewToken(token, setting);
+
+  token = await memberController.getTokenByReq(setting);
   // console.log (token)
   // return
   //建立初始資料夾
